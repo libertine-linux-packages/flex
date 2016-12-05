@@ -1,0 +1,127 @@
+# This file is part of libertine linux's package flex. It is subject to the license terms in the COPYRIGHT flex found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/flex/master/COPYRIGHT. No part of libertine linux's package flex, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package flex. See the COPYRIGHT flex in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/flex/master/COPYRIGHT.
+
+
+variant=upstream
+
+depends build_ccache
+build_needs ccache
+
+depends build_gnumake
+build_needs make
+
+depends build_slibtool
+build_needs clibtool-static libtoolize realpath
+
+depends build_perl
+build_needs perl
+
+depends build_autoconf
+build_needs autoconf autoheader autom4te autoreconf autoscan autoupdate ifnames
+
+depends build_automake
+build_needs automake aclocal
+
+depends build_gnum4
+build_needs m4
+
+depends build_bison
+build_needs bison
+
+depends build_reflex
+build_needs reflex
+
+depends build_busybox
+build_needs expr install sort ls sleep rmdir cut # For autoconf / configure
+
+build_needs rm sed ln
+_libertine_compile_flex_internal()
+{
+	local shouldStrip="$1"
+	local destinationSysrootFolderPath="$2"
+	
+	ln -s reflex "$(libertine_public_PATH)"/flex
+	
+	if $shouldStrip; then
+		libertine_public_populateInputSysroot reflex
+	else
+		libertine_public_populateInputSysroot build_reflex
+	fi
+	
+	pushd "$(libertine_public_sourcePath)"
+		
+		# Get rid of Gettext (po), doc, tests, examples
+		rm -rf po
+		sed -i \
+			-e '/AM_GNU_GETTEXT/d' \
+			-e '/po\/Makefile.in/d' \
+			-e '/doc\/Makefile/d' \
+			-e '/tests\/Makefile/d' \
+			-e '/examples\/Makefile/d' \
+			-e '/examples\/fastwc\/Makefile/d' \
+			-e '/examples\/manual\/Makefile/d' \
+			configure.ac
+		sed -i \
+			-e '/po \\/d' \
+			-e '/doc \\/d' \
+			-e '/tests \\/d' \
+			-e '/examples \\/d' \
+			Makefile.am
+		
+		sed -i \
+			-e 's/@LIBINTL@//g' \
+			src/Makefile.am
+		
+		# Make sure we don't detect git for tools/git2cl
+		rm -rf .git
+						
+		# Based on autogen.sh
+		printf '' >ChangeLog
+		libtoolize --install --force --verbose
+		autoreconf --install --force --verbose
+		
+		libertine_public_autoconf_modernAutoconfConfigure
+		
+		libertine_public_makeSerial
+		
+		libertine_public_make install
+	
+	popd
+	
+	if $shouldStrip; then
+		libertine_public_installAndStripBinariesIn bin flex
+		ln -s flex "$(libertine_public_outputInitramfsPath)"/usr/bin/flex++
+	fi
+}
+
+case "$package" in
+	
+	build_flex)
+		
+		build_provides flex flex++
+		
+		depends build_musl_cross_make_build
+		build_needs "$libertine_build"-cc "$libertine_build"-gcc "$libertine_build"-ar "$libertine_build"-ld "$libertine_build"-ranlib "$libertine_build"-c++ "$libertine_build"-g++ "$libertine_build"-cpp "$libertine_build"-strip
+		
+		libertine_compile_build_flex()
+		{
+			_libertine_compile_flex_internal false "$(libertine_public_outputBuildSysrootPath)"
+		}
+		
+	;;
+	
+	flex)
+
+		depends reflex
+
+		depends build_musl_cross_make_host
+		build_needs "$libertine_host"-cc "$libertine_host"-gcc "$libertine_host"-ar "$libertine_host"-ld "$libertine_host"-ranlib "$libertine_build"-c++ "$libertine_build"-g++ "$libertine_build"-cpp "$libertine_host"-strip
+		
+		libertine_compile_flex()
+		{
+			_libertine_compile_flex_internal true "$(libertine_public_outputHostSysrootPath)"
+		}
+		
+	;;
+	
+esac
