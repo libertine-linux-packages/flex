@@ -40,7 +40,7 @@ _libertine_compile_flex_internal()
 	local shouldStrip="$1"
 	local destinationSysrootFolderPath="$2"
 	
-	ln -s reflex "$(libertine_public_PATH)"/flex
+	ln -s reflex "$(libertine_public_buildNeedsPath)"/flex
 	
 	if $shouldStrip; then
 		libertine_public_populateInputSysroot reflex
