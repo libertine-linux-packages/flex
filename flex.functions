@@ -89,7 +89,7 @@ _libertine_compile_flex_internal()
 	popd
 	
 	if $shouldStrip; then
-		libertine_public_installAndStripBinariesIn bin flex
+		libertine_public_installAndStripBinaryIn bin flex
 		ln -s flex "$(libertine_public_outputInitramfsPath)"/usr/bin/flex++
 	fi
 }
@@ -116,6 +116,9 @@ case "$package" in
 
 		depends build_musl_cross_make_host
 		build_needs "$libertine_host"-cc "$libertine_host"-gcc "$libertine_host"-ar "$libertine_host"-ld "$libertine_host"-ranlib "$libertine_build"-c++ "$libertine_build"-g++ "$libertine_build"-cpp "$libertine_host"-strip
+
+		depends build_paxctl
+		build_needs paxctl
 		
 		libertine_compile_flex()
 		{
