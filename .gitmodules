@@ -1,3 +1,5 @@
 [submodule "upstream"]
 	path = upstream
-	url = https://github.com/westes/flex.git
+	url = https://github.com/libertine-linux-clones/flex.git
+	branch = master
+	libertine-linux-upstream = https://github.com/westes/flex.git
